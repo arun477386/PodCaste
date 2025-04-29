@@ -1,0 +1,175 @@
+Here is a detailed set of **rules and guidelines** for the app's design, layout, and functionality. These rules should be followed consistently throughout the app for a clean, unified user experience.
+
+### **Design and UI Guidelines**
+
+#### **1. General Design Principles**
+- **Minimalistic & Calm**: The app should have a clean and calming interface, focusing on simplicity to create a peaceful, meditative environment.
+- **Consistency**: Ensure consistency in spacing, fonts, colors, and design elements across the entire app.
+- **Visual Hierarchy**: Use typography sizes, weights, and colors to establish a clear visual hierarchy. Titles should be more prominent than body text, and interactive elements (e.g., buttons, links) should stand out.
+- **Accessibility**: Ensure all text has good contrast against the background for readability, especially in dark mode. Ensure font sizes are readable on different devices.
+  
+#### **2. Typography Rules**
+- **Font Families**:
+  - **Primary Font**: `Roboto` or `Inter` for headers.
+  - **Secondary Font**: `Open Sans` or `Lato` for body text.
+  
+- **Font Sizes**:
+  - **Heading 1 (H1)**: 36px - Used for major titles (e.g., "Sign Up").
+  - **Heading 2 (H2)**: 28px - Used for section titles.
+  - **Heading 3 (H3)**: 22px - Used for minor headings.
+  - **Body Text**: 16px - Default size for paragraphs, descriptions, etc.
+  - **Subtext / Captions**: 14px - For secondary text (e.g., image captions, less important information).
+  - **Button Text**: 18px - Button labels.
+  - **Input Fields Text**: 16px - For form fields.
+
+- **Font Weights**:
+  - **Bold**: For headings (font-weight: 700).
+  - **Regular**: For body text (font-weight: 400).
+  - **Light**: For subtext or captions (font-weight: 300).
+
+- **Line Heights**:
+  - **Headings**: 1.3
+  - **Body Text**: 1.5
+  - **Subtext**: 1.4
+  
+#### **3. Color Scheme**
+- **Primary Colors**:
+  - **Main Background**:
+    - Light: `#F5F5F5` (light gray) for the background.
+    - Dark Mode: `#121212` (dark gray) for background.
+  
+  - **Primary Accent**:
+    - `#4CAF50` (green) - For interactive buttons and highlights.
+  
+  - **Secondary Accent**:
+    - `#1E88E5` (blue) - For links, action buttons, and key accents.
+  
+  - **Button Background**:
+    - Primary: `#4CAF50` (green).
+    - Secondary (inactive): `#A5D6A7` (light green).
+  
+  - **Button Text**:
+    - `#FFFFFF` (white) for button text.
+  
+- **Text Colors**:
+  - **Primary Text**:
+    - Light Mode: `#212121` (dark gray).
+    - Dark Mode: `#E0E0E0` (light gray).
+  - **Secondary Text**:
+    - Light Mode: `#757575` (gray).
+    - Dark Mode: `#BDBDBD` (light gray).
+  
+  - **Error Text**: `#D32F2F` (red) for error messages.
+  
+  - **Link Text**: `#1E88E5` (blue) for clickable links.
+
+- **UI Element Colors**:
+  - **Input Field Background**:
+    - Light Mode: `#E0E0E0` (gray).
+    - Dark Mode: `#616161` (dark gray).
+  
+  - **Card Background**:
+    - Light Mode: `#FFFFFF` (white).
+    - Dark Mode: `#424242` (dark gray).
+  
+  - **Icon Colors**:
+    - Light Mode: `#4CAF50` (green) for active icons.
+    - Dark Mode: `#E0E0E0` (light gray).
+
+- **Progress Indicator**: `#1E88E5` (blue).
+
+#### **4. Layout and Spacing**
+- **Margins & Padding**:
+  - Ensure consistent margins of 16px on the sides and 24px top/bottom for all content sections.
+  - Use padding of 16px for buttons and form inputs for ease of interaction.
+  
+- **Element Alignment**:
+  - Align text, images, and buttons centrally or according to the design hierarchy (left for form labels, center for headings).
+  
+- **Buttons & Interactions**:
+  - Ensure buttons have rounded corners with a radius of 8px.
+  - Add subtle animations when a button is clicked (like a slight scale effect).
+
+#### **5. Button and UI Element Guidelines**
+- **Primary Button**:
+  - Background Color: `#4CAF50` (green).
+  - Text Color: `#FFFFFF` (white).
+  - Use for major actions like "Sign Up" or "Login".
+  
+- **Secondary Button**:
+  - Background Color: `#A5D6A7` (light green).
+  - Text Color: `#FFFFFF` (white).
+  - Use for actions like "Cancel" or less important actions.
+
+- **Icon Buttons**: 
+  - Use for navigational elements like the hamburger menu or settings.
+  - Icon Color: `#4CAF50` (green) for active states.
+  
+- **Text Links**:
+  - Color: `#1E88E5` (blue).
+  - Underlined for clear visibility.
+  
+- **Input Fields**:
+  - Background: `#E0E0E0` (light gray).
+  - Border Radius: 8px for smoother edges.
+  - Border: `1px solid #BDBDBD` (light gray).
+  
+#### **6. Navigation Guidelines**
+- **Bottom Navigation**:
+  - Fixed at the bottom of the screen.
+  - Icons should be 24px in size with a clear label below each.
+  - Active icons should have a color of `#1E88E5` (blue).
+  
+- **Drawer Navigation**:
+  - Background color: `#FFFFFF` (white) for light mode and `#424242` for dark mode.
+  - Active item highlighted in `#1E88E5` (blue).
+  - Sections should be divided clearly with 16px padding for each section.
+
+#### **7. Iconography**
+- **Icons**:
+  - Ensure icons are simple and intuitive, representing actions clearly (e.g., a bell icon for notifications, a profile icon for settings).
+  - Icons should match the color scheme: `#4CAF50` for active states and `#757575` for inactive states.
+  
+#### **8. Dark Mode**
+- Ensure that all colors and text adapt well when switching between dark and light modes. Provide an option for the user to toggle between modes.
+- **Dark Mode Guidelines**:
+  - Background: `#121212` (dark gray).
+  - Text: `#E0E0E0` (light gray).
+  - Buttons: `#4CAF50` (green) with white text.
+
+---
+
+### **Functionality Guidelines**
+
+#### **9. Authentication Flow**
+- **Sign-Up**: Ensure that the user can sign up via email/password and Google Auth. Use proper validation (e.g., email format validation, password strength check).
+- **Sign-In**: Handle sign-in with Firebase Auth for both email/password and Google Auth.
+- **Sign-Out**: Implement a sign-out functionality that clears the authentication state and redirects the user to the sign-in screen.
+- **Auth Buttons**: Create reusable `AuthButton` components for sign-up, sign-in, and social logins (e.g., Google).
+
+#### **10. Error Handling**
+- Provide clear and friendly error messages. For example:
+  - "Invalid credentials. Please check your email or password."
+  - "Email already in use. Please try logging in or resetting your password."
+  
+#### **11. Form Validation**
+- Validate all forms on submission (e.g., email format check, password strength check). Provide clear error messages for each invalid field.
+
+#### **12. User Profile**
+- Display the user’s profile information (name, email, profile picture).
+- Allow the user to edit their display name and profile picture later.
+
+#### **13. User Progress Tracker**
+- **Progress Bar**: Dynamically adjust the progress bar based on the selected number of days.
+- **Active Dots**: The progress dots should align with the number of days selected and dynamically adjust to the screen size.
+
+---
+
+### **Conclusion**
+- Follow the typography, color, and layout rules meticulously to ensure consistency and usability throughout the app.
+- Implement the functional guidelines to ensure smooth authentication and user experience.
+- Test the app across different screen sizes and devices to make sure the design is responsive and works well in both light and dark modes.
+
+By following these guidelines, you will create a user-friendly, clean, and calm app that maintains consistency and professionalism throughout.
+
+Let me know if you need further clarification or if you’d like any adjustments to these rules!
