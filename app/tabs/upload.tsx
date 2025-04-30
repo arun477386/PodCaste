@@ -58,6 +58,9 @@ export default function UploadScreen() {
   const [error, setError] = useState('');
   const [isPlaying, setIsPlaying] = useState(false);
   const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const [duration, setDuration] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
     (async () => {
@@ -88,6 +91,13 @@ export default function UploadScreen() {
       }
     })();
   }, []);
+
+  const formatTime = (milliseconds: number) => {
+    const totalSeconds = Math.floor(milliseconds / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  };
 
   const pickImage = async () => {
     try {
@@ -249,8 +259,14 @@ export default function UploadScreen() {
           if (status.isLoaded) {
             if (status.didJustFinish) {
               setIsPlaying(false);
+              setCurrentTime(0);
+              setProgress(0);
               await newSound.setPositionAsync(0);
               await newSound.pauseAsync();
+            } else if (status.isPlaying && status.durationMillis) {
+              setDuration(status.durationMillis);
+              setCurrentTime(status.positionMillis);
+              setProgress(status.positionMillis / status.durationMillis);
             }
           }
         });
@@ -351,18 +367,31 @@ export default function UploadScreen() {
                 </View>
               ) : audio ? (
                 <TouchableOpacity
-                  style={[styles.audioPlayer, { backgroundColor: themeColors.inputBackground }]}
+                  style={[styles.audioPlayer]}
                   onPress={playAudio}
                 >
                   <View style={styles.audioPlayerContent}>
                     <Ionicons
                       name={isPlaying ? 'pause-circle' : 'play-circle'}
                       size={40}
-                      color={themeColors.buttonPrimary}
+                      color="#4CAF50"
                     />
-                    <Text style={[styles.audioPlayerText, { color: themeColors.textPrimary }]}>
-                      {isPlaying ? 'Pause Audio' : 'Play Audio'}
-                    </Text>
+                    <View style={styles.audioInfo}>
+                      <Text style={[styles.audioPlayerText, { color: '#212121' }]}>
+                        {isPlaying ? 'Pause Audio' : 'Play Audio'}
+                      </Text>
+                      <View style={styles.progressBarContainer}>
+                        <View 
+                          style={[
+                            styles.progressBar,
+                            { width: `${progress * 100}%` }
+                          ]} 
+                        />
+                      </View>
+                      <Text style={[styles.audioTimeText, { color: '#757575' }]}>
+                        {formatTime(currentTime)} / {formatTime(duration)}
+                      </Text>
+                    </View>
                   </View>
                 </TouchableOpacity>
               ) : (
@@ -587,6 +616,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     overflow: 'hidden',
     marginBottom: 16,
+    backgroundColor: '#FFFFFF',
   },
   audioPlayerContent: {
     flex: 1,
@@ -594,10 +624,34 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 12,
+    paddingHorizontal: 16,
+  },
+  audioInfo: {
+    flex: 1,
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: 4,
+  },
+  progressBarContainer: {
+    width: '100%',
+    height: 3,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 1.5,
+    marginTop: 4,
+  },
+  progressBar: {
+    height: '100%',
+    backgroundColor: '#4CAF50',
+    borderRadius: 1.5,
   },
   audioPlayerText: {
     fontSize: 16,
     fontWeight: '600',
+    fontFamily: 'Inter',
+    color: '#212121',
+  },
+  audioTimeText: {
+    fontSize: 14,
     fontFamily: 'Inter',
   },
 }); 

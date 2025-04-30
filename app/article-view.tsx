@@ -20,6 +20,11 @@ export default function ArticleViewScreen() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [sound, setSound] = useState<Audio.Sound | null>(null);
   const soundRef = useRef<Audio.Sound | null>(null);
+  const [progress, setProgress] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [volume, setVolume] = useState(1.0);
+  const [isMuted, setIsMuted] = useState(false);
 
   // Refresh articles when component mounts
   React.useEffect(() => {
@@ -107,8 +112,14 @@ export default function ArticleViewScreen() {
           if (status.isLoaded) {
             if (status.didJustFinish) {
               setIsPlaying(false);
+              setProgress(0);
+              setCurrentTime(0);
               await newSound.setPositionAsync(0);
               await newSound.pauseAsync();
+            } else if (status.isPlaying && status.durationMillis) {
+              setProgress(status.positionMillis / status.durationMillis);
+              setDuration(status.durationMillis);
+              setCurrentTime(status.positionMillis);
             }
           }
         });
@@ -120,6 +131,28 @@ export default function ArticleViewScreen() {
       console.error('Error playing audio:', error);
       Alert.alert('Error', 'Failed to play audio');
     }
+  };
+
+  const toggleMute = async () => {
+    if (!soundRef.current) return;
+    try {
+      if (isMuted) {
+        await soundRef.current.setVolumeAsync(volume);
+        setIsMuted(false);
+      } else {
+        await soundRef.current.setVolumeAsync(0);
+        setIsMuted(true);
+      }
+    } catch (error) {
+      console.error('Error toggling mute:', error);
+    }
+  };
+
+  const formatTime = (milliseconds: number) => {
+    const totalSeconds = Math.floor(milliseconds / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
 
   // Clean up audio when component unmounts
@@ -208,21 +241,45 @@ export default function ArticleViewScreen() {
           </View>
 
           {article.audioUrl && (
-            <TouchableOpacity
-              style={[styles.audioPlayer, { backgroundColor: themeColors.inputBackground }]}
-              onPress={playAudio}
-            >
-              <View style={styles.audioPlayerContent}>
-                <Ionicons
-                  name={isPlaying ? 'pause-circle' : 'play-circle'}
-                  size={40}
-                  color={themeColors.buttonPrimary}
-                />
-                <Text style={[styles.audioPlayerText, { color: themeColors.textPrimary }]}>
-                  {isPlaying ? 'Pause Audio' : 'Play Audio'}
-                </Text>
+            <View style={styles.audioContainer}>
+              <View style={styles.progressBarContainer}>
+                <View style={styles.progressBackground}>
+                  <View 
+                    style={[
+                      styles.progressBar,
+                      { width: `${progress * 100}%` }
+                    ]} 
+                  />
+                </View>
               </View>
-            </TouchableOpacity>
+              <View style={styles.audioControls}>
+                <View style={styles.leftControls}>
+                  <TouchableOpacity
+                    style={styles.controlButton}
+                    onPress={playAudio}
+                  >
+                    <Ionicons
+                      name={isPlaying ? 'pause' : 'play'}
+                      size={24}
+                      color="#4CAF50"
+                    />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.controlButton}
+                    onPress={toggleMute}
+                  >
+                    <Ionicons
+                      name={isMuted ? 'volume-mute' : 'volume-medium'}
+                      size={24}
+                      color="#4CAF50"
+                    />
+                  </TouchableOpacity>
+                  <Text style={[styles.timeText, { color: '#4CAF50' }]}>
+                    {formatTime(currentTime)} / {formatTime(duration)}
+                  </Text>
+                </View>
+              </View>
+            </View>
           )}
 
           <View style={styles.articleMeta}>
@@ -491,20 +548,39 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontFamily: 'Inter',
   },
-  audioPlayer: {
-    marginBottom: 24,
-    borderRadius: 8,
-    overflow: 'hidden',
+  audioContainer: {
+    marginBottom: 16,
   },
-  audioPlayerContent: {
+  progressBarContainer: {
+    width: '100%',
+    height: 3,
+    backgroundColor: '#E0E0E0',
+  },
+  progressBackground: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: 'transparent',
+  },
+  progressBar: {
+    height: '100%',
+    backgroundColor: '#4CAF50',
+  },
+  audioControls: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  leftControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 12,
   },
-  audioPlayerText: {
-    fontSize: 16,
-    fontWeight: '600',
+  controlButton: {
+    padding: 4,
+  },
+  timeText: {
+    fontSize: 14,
     fontFamily: 'Inter',
   },
 }); 
