@@ -22,6 +22,7 @@ module.exports = {
       }
     },
     android: {
+      package: 'com.arunhostel.podcast',
       adaptiveIcon: {
         foregroundImage: './assets/adaptive-icon.png',
         backgroundColor: '#ffffff'

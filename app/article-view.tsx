@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import { View, Text, ScrollView, StyleSheet, Image, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { useColorScheme } from 'react-native';
 import { colors } from '../styles/colors';
@@ -8,6 +8,7 @@ import { useApp } from '../contexts/AppContext';
 import { useAuth } from '../contexts/AuthContext';
 import { articleService } from '../services/articleService';
 import { Ionicons } from '@expo/vector-icons';
+import { Audio } from 'expo-av';
 
 export default function ArticleViewScreen() {
   const colorScheme = useColorScheme();
@@ -16,6 +17,14 @@ export default function ArticleViewScreen() {
   const { articles, isLoadingArticles, refreshArticles } = useApp();
   const { user } = useAuth();
   const [updatingStatus, setUpdatingStatus] = React.useState<string | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const soundRef = useRef<Audio.Sound | null>(null);
+
+  // Refresh articles when component mounts
+  React.useEffect(() => {
+    refreshArticles();
+  }, [id]);
 
   const article = articles.find(a => a.id === id);
 
@@ -70,6 +79,57 @@ export default function ArticleViewScreen() {
       setUpdatingStatus(null);
     }
   };
+
+  const playAudio = async () => {
+    if (!article?.audioUrl) return;
+
+    try {
+      if (soundRef.current) {
+        const status = await soundRef.current.getStatusAsync();
+        if (status.isLoaded) {
+          if (status.isPlaying) {
+            await soundRef.current.pauseAsync();
+            setIsPlaying(false);
+          } else {
+            await soundRef.current.playAsync();
+            setIsPlaying(true);
+          }
+        }
+      } else {
+        const { sound: newSound } = await Audio.Sound.createAsync(
+          { uri: article.audioUrl },
+          { shouldPlay: false }
+        );
+        soundRef.current = newSound;
+        setSound(newSound);
+        
+        newSound.setOnPlaybackStatusUpdate(async (status) => {
+          if (status.isLoaded) {
+            if (status.didJustFinish) {
+              setIsPlaying(false);
+              await newSound.setPositionAsync(0);
+              await newSound.pauseAsync();
+            }
+          }
+        });
+        
+        await newSound.playAsync();
+        setIsPlaying(true);
+      }
+    } catch (error) {
+      console.error('Error playing audio:', error);
+      Alert.alert('Error', 'Failed to play audio');
+    }
+  };
+
+  // Clean up audio when component unmounts
+  React.useEffect(() => {
+    return () => {
+      if (soundRef.current) {
+        soundRef.current.unloadAsync();
+      }
+    };
+  }, []);
 
   if (isLoadingArticles) {
     return (
@@ -146,6 +206,24 @@ export default function ArticleViewScreen() {
               </View>
             )}
           </View>
+
+          {article.audioUrl && (
+            <TouchableOpacity
+              style={[styles.audioPlayer, { backgroundColor: themeColors.inputBackground }]}
+              onPress={playAudio}
+            >
+              <View style={styles.audioPlayerContent}>
+                <Ionicons
+                  name={isPlaying ? 'pause-circle' : 'play-circle'}
+                  size={40}
+                  color={themeColors.buttonPrimary}
+                />
+                <Text style={[styles.audioPlayerText, { color: themeColors.textPrimary }]}>
+                  {isPlaying ? 'Pause Audio' : 'Play Audio'}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          )}
 
           <View style={styles.articleMeta}>
             <View style={styles.metaItem}>
@@ -410,6 +488,22 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: 12,
+    fontWeight: '600',
+    fontFamily: 'Inter',
+  },
+  audioPlayer: {
+    marginBottom: 24,
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  audioPlayerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    gap: 12,
+  },
+  audioPlayerText: {
+    fontSize: 16,
     fontWeight: '600',
     fontFamily: 'Inter',
   },

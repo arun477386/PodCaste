@@ -16,6 +16,7 @@ import { useColorScheme } from 'react-native';
 import { colors } from '../../styles/colors';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import * as DocumentPicker from 'expo-document-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as FileSystem from 'expo-file-system';
@@ -24,6 +25,7 @@ import { auth } from '../../services/firebase';
 import { articleService } from '../../services/articleService';
 import { storageService } from '../../services/storageService';
 import { useApp } from '../../contexts/AppContext';
+import { Audio } from 'expo-av';
 
 const categories = [
   { id: '1', name: 'Health' },
@@ -46,12 +48,16 @@ export default function UploadScreen() {
   const { refreshArticles } = useApp();
   const [loading, setLoading] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadingAudio, setUploadingAudio] = useState(false);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
   const [image, setImage] = useState<string | null>(null);
+  const [audio, setAudio] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [sound, setSound] = useState<Audio.Sound | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -117,6 +123,39 @@ export default function UploadScreen() {
     }
   };
 
+  const pickAudio = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: 'audio/*',
+        copyToCacheDirectory: true,
+      });
+
+      if (result.assets && result.assets.length > 0) {
+        setUploadingAudio(true);
+        try {
+          const audioUrl = await storageService.uploadAudio(result.assets[0].uri);
+          setAudio(audioUrl);
+        } catch (error) {
+          console.error('Audio upload error:', error);
+          Alert.alert(
+            'Upload Error',
+            'Failed to upload audio. Please try again.',
+            [{ text: 'OK' }]
+          );
+        } finally {
+          setUploadingAudio(false);
+        }
+      }
+    } catch (error) {
+      console.error('Audio picker error:', error);
+      Alert.alert(
+        'Error',
+        'Failed to pick audio. Please try again.',
+        [{ text: 'OK' }]
+      );
+    }
+  };
+
   const validateForm = () => {
     if (!title || !content || !selectedCategory || !selectedLanguage) {
       setError('Please fill in all fields');
@@ -155,7 +194,8 @@ export default function UploadScreen() {
         user.uid,
         selectedCategoryObj.name,
         selectedLanguage!,
-        image
+        image,
+        audio
       );
 
       // Reset form
@@ -164,6 +204,7 @@ export default function UploadScreen() {
       setSelectedCategory(null);
       setSelectedLanguage(null);
       setImage(null);
+      setAudio(null);
       setError('');
 
       // Refresh articles in the app context
@@ -181,6 +222,56 @@ export default function UploadScreen() {
       setLoading(false);
     }
   };
+
+  const playAudio = async () => {
+    if (!audio) return;
+
+    try {
+      if (sound) {
+        const status = await sound.getStatusAsync();
+        if (status.isLoaded) {
+          if (status.isPlaying) {
+            await sound.pauseAsync();
+            setIsPlaying(false);
+          } else {
+            await sound.playAsync();
+            setIsPlaying(true);
+          }
+        }
+      } else {
+        const { sound: newSound } = await Audio.Sound.createAsync(
+          { uri: audio },
+          { shouldPlay: false }
+        );
+        setSound(newSound);
+        
+        newSound.setOnPlaybackStatusUpdate(async (status) => {
+          if (status.isLoaded) {
+            if (status.didJustFinish) {
+              setIsPlaying(false);
+              await newSound.setPositionAsync(0);
+              await newSound.pauseAsync();
+            }
+          }
+        });
+        
+        await newSound.playAsync();
+        setIsPlaying(true);
+      }
+    } catch (error) {
+      console.error('Error playing audio:', error);
+      Alert.alert('Error', 'Failed to play audio');
+    }
+  };
+
+  // Clean up audio when component unmounts
+  useEffect(() => {
+    return () => {
+      if (sound) {
+        sound.unloadAsync();
+      }
+    };
+  }, [sound]);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: themeColors.background }]} edges={['top']}>
@@ -242,6 +333,47 @@ export default function UploadScreen() {
               numberOfLines={10}
               textAlignVertical="top"
             />
+          </View>
+
+          <View style={styles.inputContainer}>
+            <Text style={[styles.label, { color: themeColors.textPrimary }]}>Audio</Text>
+            <TouchableOpacity
+              style={[styles.audioPicker, { backgroundColor: themeColors.inputBackground }]}
+              onPress={pickAudio}
+              disabled={uploadingAudio}
+            >
+              {uploadingAudio ? (
+                <View style={styles.audioPlaceholder}>
+                  <ActivityIndicator size="large" color={themeColors.buttonPrimary} />
+                  <Text style={[styles.audioText, { color: themeColors.textSecondary }]}>
+                    Uploading audio...
+                  </Text>
+                </View>
+              ) : audio ? (
+                <TouchableOpacity
+                  style={[styles.audioPlayer, { backgroundColor: themeColors.inputBackground }]}
+                  onPress={playAudio}
+                >
+                  <View style={styles.audioPlayerContent}>
+                    <Ionicons
+                      name={isPlaying ? 'pause-circle' : 'play-circle'}
+                      size={40}
+                      color={themeColors.buttonPrimary}
+                    />
+                    <Text style={[styles.audioPlayerText, { color: themeColors.textPrimary }]}>
+                      {isPlaying ? 'Pause Audio' : 'Play Audio'}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              ) : (
+                <View style={styles.audioPlaceholder}>
+                  <Ionicons name="musical-notes-outline" size={40} color={themeColors.textSecondary} />
+                  <Text style={[styles.audioText, { color: themeColors.textSecondary }]}>
+                    Tap to add audio file
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
           </View>
 
           <View style={styles.inputContainer}>
@@ -431,5 +563,41 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginBottom: 16,
     textAlign: 'center',
+  },
+  audioPicker: {
+    width: '100%',
+    height: 100,
+    borderRadius: 8,
+    overflow: 'hidden',
+    marginBottom: 16,
+  },
+  audioPlaceholder: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  audioText: {
+    marginTop: 8,
+    fontSize: 14,
+  },
+  audioPlayer: {
+    width: '100%',
+    height: 100,
+    borderRadius: 8,
+    overflow: 'hidden',
+    marginBottom: 16,
+  },
+  audioPlayerContent: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  audioPlayerText: {
+    fontSize: 16,
+    fontWeight: '600',
+    fontFamily: 'Inter',
   },
 }); 

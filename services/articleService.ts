@@ -23,7 +23,8 @@ export const articleService = {
     authorId: string,
     categoryId: string,
     language: string,
-    imageUrl?: string | null
+    imageUrl?: string | null,
+    audioUrl?: string | null
   ): Promise<string> => {
     const db = getFirestore();
     const articlesRef = collection(db, 'articles');
@@ -40,6 +41,7 @@ export const articleService = {
       plagiarismStatus: 'unchecked',
       isPublished: false,
       imageUrl: imageUrl || null,
+      audioUrl: audioUrl || null,
     };
 
     try {
